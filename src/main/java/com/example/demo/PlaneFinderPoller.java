@@ -14,26 +14,31 @@ public class PlaneFinderPoller {
             WebClient.create("http://localhost:7634/api/aircraft"); //planefinder-api
     private final RedisConnectionFactory connectionFactory;
     private final RedisOperations<String, Aircraft> redisOperations;
+
     PlaneFinderPoller(RedisConnectionFactory connectionFactory,
                       RedisOperations<String, Aircraft> redisOperations) {
         this.connectionFactory = connectionFactory;
         this.redisOperations = redisOperations;
     }
+
     @Scheduled(fixedRate = 1000)
     private void pollPlanes() {
         connectionFactory.getConnection().serverCommands().flushDb();
+        try {
+            client.get()
+                    .retrieve()
+                    .bodyToFlux(Aircraft.class)
+                    .filter(plane -> plane != null && !plane.getReg().isEmpty())
+                    .doOnError(e -> System.err.println("Error fetching aircraft data: " + e.getMessage()))
+                    .toStream()
+                    .forEach(ac -> redisOperations.opsForValue().set(ac.getReg(), ac));
 
-        client.get()
-                .retrieve()
-                .bodyToFlux(Aircraft.class)
-                .filter(plane -> !plane.getReg().isEmpty())
-                .toStream()
-                .forEach(ac -> redisOperations.opsForValue().set(ac.getReg(), ac));
-
-        redisOperations.opsForValue()
-                .getOperations()
-                .keys("*")
-                .forEach(ac ->
-                        System.out.println(redisOperations.opsForValue().get(ac)));
+            redisOperations.opsForValue()
+                    .getOperations()
+                    .keys("*")
+                    .forEach(ac -> System.out.println(redisOperations.opsForValue().get(ac)));
+        } catch (Exception e) {
+            System.err.println("Error in pollPlanes: " + e.getMessage());
+        }
     }
 }
