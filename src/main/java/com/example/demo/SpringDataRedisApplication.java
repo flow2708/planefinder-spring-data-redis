@@ -11,7 +11,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @SpringBootApplication
 public class SpringDataRedisApplication {
-	@Bean
+	/*@Bean
 	public RedisOperations<String, Aircraft> redisOperations(RedisConnectionFactory factory) {
 		Jackson2JsonRedisSerializer<Aircraft> serializer = new Jackson2JsonRedisSerializer<>(Aircraft.class);
 
@@ -22,6 +22,7 @@ public class SpringDataRedisApplication {
 
 		return template;
 	}
+	 */
 	public static void main(String[] args) {
 		SpringApplication.run(SpringDataRedisApplication.class, args);
 	}
